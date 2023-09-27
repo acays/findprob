@@ -214,15 +214,14 @@ server <- function(input, output) {
   })
 
   output$lower_bound <- renderUI({
-    # print("lower bound")
   
     if (input$dist == "rbinom") {
       if (is.null(input$tail)) {
         shiny:::flushReact()
         return()
       }
-
-      if (input$tail %in% c("both", "middle")) {
+ 
+      if (input$tail == "both") {
         selectInput(
           inputId = "lower_bound",
           label = "Lower bound:",
@@ -230,6 +229,17 @@ server <- function(input, output) {
             "<" = "open",
             "<=" = "closed",
             "=" = "equal"
+          ),
+          selected = "open"
+        )
+      }
+      else if (input$tail == "middle") {
+        selectInput(
+          inputId = "lower_bound",
+          label = "Lower bound:",
+          choices = c(
+            "<" = "open",
+            "<=" = "closed"
           ),
           selected = "open"
         )
@@ -276,8 +286,7 @@ server <- function(input, output) {
           label = "Upper bound:",
           choices = c(
             "<" = "open",
-            "<=" = "closed",
-            "=" = "equal"
+            "<=" = "closed"
           ),
           selected = "open"
         )
@@ -309,9 +318,6 @@ server <- function(input, output) {
     up_less <- "<"
     up_greater <- ">"
     
-    print(input$lower_bound)
-    print(input$upper_bound)
-
     if (input$dist == "rbinom" & input$tail != "equal") {
       if (is.null(input$lower_bound)) {
         shiny:::flushReact()
@@ -322,6 +328,12 @@ server <- function(input, output) {
         low_less <- "<="
         low_greater <- ">="
       }
+      
+      if (input$lower_bound == "equal") {
+        low_less <- "="
+        low_greater <- "="
+      }
+      
 
       if (input$tail %in% c("middle", "both")) {
         if (is.null(input$upper_bound)) {
@@ -333,6 +345,13 @@ server <- function(input, output) {
           up_less <- "<="
           up_greater <- ">="
         }
+        
+        if (input$upper_bound == "equal") {
+          up_less <- "="
+          up_greater <- "="
+        }
+        
+        
       }
     }
 
