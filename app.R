@@ -128,15 +128,15 @@ server <- function(input, output) {
   find_rbinom_code <- reactive({
     
     if (input$tail == "equal") {
-      text <- paste0('dbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p,')')
+      text <- paste0('dbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
     } else if (input$tail == "lower") {
-      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=TRUE)')
+      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
     } else if (input$tail == "upper") {
-      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=FALSE)')
+      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)')
     } else if (input$tail == "middle") {
-      text <- paste0('1 - ', 'pbinom(', input$b, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=FALSE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=TRUE)')
+      text <- paste0('1 - ', 'pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=TRUE)')
     } else if (input$tail == "both") {
-      text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=TRUE)')
+      text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
     }
     text
     
@@ -791,7 +791,7 @@ server <- function(input, output) {
     }
 
 
-
+    isDBinom <- FALSE
     f <- function() NULL
 
     if (input$dist == "rnorm") {
@@ -831,8 +831,11 @@ server <- function(input, output) {
         shiny:::flushReact()
         return()
       }
-
-      else if (input$lower_bound != "equal" && !is.null(input$upper_bound) && input$upper_bound != "equal") {
+      
+      else if (input$tail != "equal" && (input$lower_bound != "equal" && is.null(input$upper_bound)) || 
+               (input$upper_bound != "equal" && is.null(input$lower_bound)) ||
+               (input$lower_bound != "equal" && !is.null(input$upper_bound) && input$upper_bound != "equal")) {
+        print("in pbinom")
         f <- function(x) pbinom(x, input$n, input$p)
 
         if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
@@ -850,21 +853,11 @@ server <- function(input, output) {
         }
       } 
       else {
-        f <- function(x) pbinom(x, input$n, input$p)
+        f <- function(x) dbinom(x, input$n, input$p)
         
-        if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
-        if (input$tail %in% c("upper") & input$lower_bound == "closed") L <- L - 1
-        if (input$tail %in% c("middle") & input$lower_bound == "closed") L <- L - 1
+        print("in dbinom")
         
-        if (input$tail %in% c("both", "middle")) {
-          if (is.null(input$upper_bound)) {
-            shiny:::flushReact()
-            return()
-          }
-          
-          if (input$tail == "both" & input$upper_bound == "closed") U <- U - 1
-          if (input$tail == "middle" & input$upper_bound == "open") U <- U - 1
-        }
+        isDBinom <- TRUE
       }
 
      
@@ -873,11 +866,13 @@ server <- function(input, output) {
     val <- NA
     if (input$tail == "lower") {
       val <- f(L)
-    } else if (input$tail == "upper") {
+    } else if (input$tail == "upper" && isDBinom == FALSE) {
       val <- 1 - f(L)
+    } else if (input$tail == "upper" && isDBinom == TRUE) {
+      val <- f(L)
     } else if (input$tail == "equal") {
       val <- f(L)
-    } else if (input$tail == "both") {
+    } else if (input$tail == "both" && isDBinom == FALSE) {
       val <- f(L) + (1 - f(U))
     } else if (input$tail == "middle") {
       val <- f(U) - f(L)
@@ -891,8 +886,6 @@ server <- function(input, output) {
       text <- sub("b", input$b, text)
     }
 
-  
-    
     # displayedCode(f)
     # displayedCode <- capture.output(print(f), file=NULL)
     
