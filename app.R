@@ -832,10 +832,7 @@ server <- function(input, output) {
         return()
       }
 
-      if (input$tail == "equal") {
-        f <- function(x) dbinom(x, input$n, input$p)
-      }
-      else {
+      else if (input$lower_bound != "equal" && !is.null(input$upper_bound) && input$upper_bound != "equal") {
         f <- function(x) pbinom(x, input$n, input$p)
 
         if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
@@ -851,7 +848,26 @@ server <- function(input, output) {
           if (input$tail == "both" & input$upper_bound == "closed") U <- U - 1
           if (input$tail == "middle" & input$upper_bound == "open") U <- U - 1
         }
+      } 
+      else {
+        f <- function(x) pbinom(x, input$n, input$p)
+        
+        if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
+        if (input$tail %in% c("upper") & input$lower_bound == "closed") L <- L - 1
+        if (input$tail %in% c("middle") & input$lower_bound == "closed") L <- L - 1
+        
+        if (input$tail %in% c("both", "middle")) {
+          if (is.null(input$upper_bound)) {
+            shiny:::flushReact()
+            return()
+          }
+          
+          if (input$tail == "both" & input$upper_bound == "closed") U <- U - 1
+          if (input$tail == "middle" & input$upper_bound == "open") U <- U - 1
+        }
       }
+
+     
     }
 
     val <- NA
