@@ -308,6 +308,9 @@ server <- function(input, output) {
 
     up_less <- "<"
     up_greater <- ">"
+    
+    print(input$lower_bound)
+    print(input$upper_bound)
 
     if (input$dist == "rbinom" & input$tail != "equal") {
       if (is.null(input$lower_bound)) {
@@ -316,8 +319,8 @@ server <- function(input, output) {
       }
 
       if (input$lower_bound == "closed") {
-        low_less <- "\u2264"
-        low_greater <- "\u2265"
+        low_less <- "<="
+        low_greater <- ">="
       }
 
       if (input$tail %in% c("middle", "both")) {
@@ -327,8 +330,8 @@ server <- function(input, output) {
         }
 
         if (input$upper_bound == "closed") {
-          up_less <- "\u2264"
-          up_greater <- "\u2265"
+          up_less <- "<="
+          up_greater <- ">="
         }
       }
     }
