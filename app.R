@@ -13,7 +13,9 @@ source("distributions/normTail.R")
 # Fix subtraction - DONE
 # change all sliders to textboxes - DONE
 # change binonmial UI to show <= instead of = DONE
-# add = sign functionality use dbinom
+# add = sign functionality use dbinom DONE
+# fix middle functionality
+# fix binom code outputs
 
 
 
@@ -134,7 +136,7 @@ server <- function(input, output) {
     } else if (input$tail == "upper") {
       text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)')
     } else if (input$tail == "middle") {
-      text <- paste0('1 - ', 'pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ' prob=' , input$p, ', lower.tail=TRUE)')
+      text <- paste0('1 - ', 'pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
     } else if (input$tail == "both") {
       text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
     }
@@ -793,6 +795,7 @@ server <- function(input, output) {
 
     isDBinom <- FALSE
     f <- function() NULL
+    g <- function() NULL
 
     if (input$dist == "rnorm") {
       if (is.null(input$mu) | is.null(input$sd)) {
@@ -831,23 +834,67 @@ server <- function(input, output) {
         shiny:::flushReact()
         return()
       }
+      else if (input$tail == "both" && input$upper_bound == "equal" 
+               && input$lower_bound == "equal") {
+        f <- function(x) dbinom(x, input$n, input$p)
+        g <- function(x) dbinom(x, input$n, input$p)
+        isDBinom <- TRUE
+      } else if (input$tail == "both" && input$upper_bound == "equal" 
+               && input$lower_bound == "open") {
+        L <- L - 1
+        f <- function(x) pbinom(x, input$n, input$p, TRUE)
+        g <- function(x) dbinom(x, input$n, input$p)
+    
+        isDBinom <- TRUE
+      } else if (input$tail == "both" && input$upper_bound == "open" 
+               && input$lower_bound == "equal") {
+        U <- U + 1
+        f <- function(x) dbinom(x, input$n, input$p)
+        g <- function(x) pbinom(x, input$n, input$p, FALSE)
+        isDBinom <- TRUE
+      } else if (input$tail == "both" && input$upper_bound == "equal" 
+               && input$lower_bound == "closed") {
+        f <- function(x) pbinom(x, input$n, input$p, TRUE)
+        g <- function(x) dbinom(x, input$n, input$p)
+        isDBinom <- TRUE
+      } else if (input$tail == "both" && input$upper_bound == "closed" 
+               && input$lower_bound == "equal") {
+        f <- function(x) dbinom(x, input$n, input$p)
+        g <- function(x) pbinom(x, input$n, input$p, FALSE)
+        isDBinom <- TRUE
+      }
       
       else if (input$tail != "equal" && (input$lower_bound != "equal" && is.null(input$upper_bound)) || 
                (input$upper_bound != "equal" && is.null(input$lower_bound)) ||
                (input$lower_bound != "equal" && !is.null(input$upper_bound) && input$upper_bound != "equal")) {
-        print("in pbinom")
         f <- function(x) pbinom(x, input$n, input$p)
 
+        # if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
+        # if (input$tail %in% c("upper") & input$lower_bound == "closed") L <- L 
+        # if (input$tail %in% c("upper") & input$lower_bound == "open") L <- L
+        # if (input$tail %in% c("middle") & input$lower_bound == "closed") L <- L
+        # 
+        # if (input$tail %in% c("both", "middle")) {
+        #   if (is.null(input$upper_bound)) {
+        #     shiny:::flushReact()
+        #     return()
+        #   }
+        # 
+        #   if (input$tail == "both" & input$upper_bound == "closed") U <- U 
+        #   if (input$tail == "middle" & input$upper_bound == "open") U <- U - 1
+        # }
+        # 
+        
         if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
         if (input$tail %in% c("upper") & input$lower_bound == "closed") L <- L - 1
         if (input$tail %in% c("middle") & input$lower_bound == "closed") L <- L - 1
-
+        
         if (input$tail %in% c("both", "middle")) {
           if (is.null(input$upper_bound)) {
             shiny:::flushReact()
             return()
           }
-
+          
           if (input$tail == "both" & input$upper_bound == "closed") U <- U - 1
           if (input$tail == "middle" & input$upper_bound == "open") U <- U - 1
         }
@@ -855,11 +902,10 @@ server <- function(input, output) {
       else {
         f <- function(x) dbinom(x, input$n, input$p)
         
-        print("in dbinom")
         
         isDBinom <- TRUE
       }
-
+      
      
     }
 
@@ -867,6 +913,7 @@ server <- function(input, output) {
     if (input$tail == "lower") {
       val <- f(L)
     } else if (input$tail == "upper" && isDBinom == FALSE) {
+      print(L)
       val <- 1 - f(L)
     } else if (input$tail == "upper" && isDBinom == TRUE) {
       val <- f(L)
@@ -874,7 +921,11 @@ server <- function(input, output) {
       val <- f(L)
     } else if (input$tail == "both" && isDBinom == FALSE) {
       val <- f(L) + (1 - f(U))
+    } else if (input$tail == "both" && isDBinom == TRUE) {
+      val <- f(L) + g(U)
     } else if (input$tail == "middle") {
+      print(U)
+      print(L)
       val <- f(U) - f(L)
     }
 
@@ -885,9 +936,6 @@ server <- function(input, output) {
     if (input$tail %in% c("both", "middle")) {
       text <- sub("b", input$b, text)
     }
-
-    # displayedCode(f)
-    # displayedCode <- capture.output(print(f), file=NULL)
     
     text
     
