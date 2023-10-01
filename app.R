@@ -14,10 +14,7 @@ source("distributions/normTail.R")
 # change all sliders to textboxes - DONE
 # change binonmial UI to show <= instead of = DONE
 # add = sign functionality use dbinom DONE
-# fix middle functionality
-# fix binom code outputs
-
-
+# fix binom code outputs - DONE
 
 
 # Set defaults -----------------------------------------------------------------
@@ -127,18 +124,62 @@ server <- function(input, output) {
     
   })
   
+  find_rbinom_code_both_equality <- reactive({
+    if (input$tail == "both" && input$lower_bound == "equal" && input$upper_bound == "open") {
+      text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'dbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
+    } else if (input$tail == "both" && input$lower_bound == "equal" && input$upper_bound == "closed") {
+      text <- paste0('pbinom(', input$b-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'dbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
+    } else if (input$tail == "both" && input$lower_bound == "equal" && input$upper_bound == "closed") {
+      text <- paste0('pbinom(', input$b-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'dbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
+    } else if (input$tail == "both" && input$lower_bound == "open" && input$upper_bound == "equal") {
+      text <- paste0('pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)', ' + ', 'dbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
+    } else if (input$tail == "both" && input$lower_bound == "closed" && input$upper_bound == "equal") {
+      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)', ' + ', 'dbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
+    } else if (input$tail == "both" && input$lower_bound == "equal" && input$upper_bound == "equal") {
+      text <- paste0('dbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')', ' + ', 'dbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
+    } 
+    
+    text
+    
+  })
+  
+  find_rbinom_code_middle <- reactive({
+    if (input$lower_bound == "open" && input$upper_bound == "closed") {
+      text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$lower_bound == "open" && input$upper_bound == "open") {
+      text <- paste0('pbinom(', input$b-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$lower_bound == "closed" && input$upper_bound == "open") {
+      text <- paste0('pbinom(', input$b-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)', ' - ', 'pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$lower_bound == "closed" && input$upper_bound == "closed") {
+      text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)', ' - ', 'pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    }
+  })
+  
   find_rbinom_code <- reactive({
+    
     
     if (input$tail == "equal") {
       text <- paste0('dbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p,')')
-    } else if (input$tail == "lower") {
+    } else if (input$tail == "lower" && input$lower_bound == "open") {
+      text <- paste0('pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$tail == "lower" && input$lower_bound == "closed") {
       text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
-    } else if (input$tail == "upper") {
+    } else if (input$tail == "upper" && input$lower_bound == "open") {
       text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)')
+    }else if (input$tail == "upper" && input$lower_bound == "closed") {
+      text <- paste0('pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)')
     } else if (input$tail == "middle") {
-      text <- paste0('1 - ', 'pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' - ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
-    } else if (input$tail == "both") {
+      text <- find_rbinom_code_middle()
+    } else if (input$tail == "both" && input$lower_bound == "open" && input$upper_bound == "open") {
+      text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$tail == "both" && input$lower_bound == "open" && input$upper_bound == "closed") {
+      text <- paste0('pbinom(', input$b-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$tail == "both" && input$lower_bound == "closed" && input$upper_bound == "open") {
       text <- paste0('pbinom(', input$b, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$tail == "both" && input$lower_bound == "closed" && input$upper_bound == "closed") {
+      text <- paste0('pbinom(', input$b-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)', ' + ', 'pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else {
+      text <- find_rbinom_code_both_equality() 
     }
     text
     
@@ -830,6 +871,7 @@ server <- function(input, output) {
       f <- function(x) pf(x, input$df1, input$df2)
     }
     else if (input$dist == "rbinom") {
+      # https://www.statology.org/dbinom-pbinom-qbinom-rbinom-in-r/
       if (is.null(input$n) | is.null(input$p) | is.null(input$lower_bound)) {
         shiny:::flushReact()
         return()
@@ -848,7 +890,6 @@ server <- function(input, output) {
         isDBinom <- TRUE
       } else if (input$tail == "both" && input$upper_bound == "open" 
                && input$lower_bound == "equal") {
-        U <- U + 1
         f <- function(x) dbinom(x, input$n, input$p)
         g <- function(x) pbinom(x, input$n, input$p, FALSE)
         isDBinom <- TRUE
@@ -859,6 +900,7 @@ server <- function(input, output) {
         isDBinom <- TRUE
       } else if (input$tail == "both" && input$upper_bound == "closed" 
                && input$lower_bound == "equal") {
+        U <- U - 1
         f <- function(x) dbinom(x, input$n, input$p)
         g <- function(x) pbinom(x, input$n, input$p, FALSE)
         isDBinom <- TRUE
@@ -869,21 +911,6 @@ server <- function(input, output) {
                (input$lower_bound != "equal" && !is.null(input$upper_bound) && input$upper_bound != "equal")) {
         f <- function(x) pbinom(x, input$n, input$p)
 
-        # if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
-        # if (input$tail %in% c("upper") & input$lower_bound == "closed") L <- L 
-        # if (input$tail %in% c("upper") & input$lower_bound == "open") L <- L
-        # if (input$tail %in% c("middle") & input$lower_bound == "closed") L <- L
-        # 
-        # if (input$tail %in% c("both", "middle")) {
-        #   if (is.null(input$upper_bound)) {
-        #     shiny:::flushReact()
-        #     return()
-        #   }
-        # 
-        #   if (input$tail == "both" & input$upper_bound == "closed") U <- U 
-        #   if (input$tail == "middle" & input$upper_bound == "open") U <- U - 1
-        # }
-        # 
         
         if (input$tail %in% c("lower", "both") & input$lower_bound == "open") L <- L - 1
         if (input$tail %in% c("upper") & input$lower_bound == "closed") L <- L - 1
@@ -913,7 +940,6 @@ server <- function(input, output) {
     if (input$tail == "lower") {
       val <- f(L)
     } else if (input$tail == "upper" && isDBinom == FALSE) {
-      print(L)
       val <- 1 - f(L)
     } else if (input$tail == "upper" && isDBinom == TRUE) {
       val <- f(L)
@@ -924,8 +950,6 @@ server <- function(input, output) {
     } else if (input$tail == "both" && isDBinom == TRUE) {
       val <- f(L) + g(U)
     } else if (input$tail == "middle") {
-      print(U)
-      print(L)
       val <- f(U) - f(L)
     }
 
