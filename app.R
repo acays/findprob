@@ -86,15 +86,13 @@ ui <- pageWithSidebar(
 
 # Define server function -------------------------------------------------------
 server <- function(input, output) {
-  # displayedCode <- reactiveVal(NULL)
-  
   find_rnorm_code <- reactive({
     if (input$tail == "lower") {
       text <- paste0('pnorm(', input$a, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=TRUE)')
     } else if (input$tail == "upper") {
       text <- paste0('pnorm(', input$a, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=FALSE)')
     } else if (input$tail == "middle") {
-      text <- paste0('1 - ','pnorm(', input$b, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=FALSE)', ' - ', 'pnorm(', input$a, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=TRUE)')
+      text <- paste0('pnorm(', input$b, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=TRUE)', ' - ', 'pnorm(', input$a, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=TRUE)')
     } else if (input$tail == "both") {
       text <- paste0('pnorm(', input$b, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=FALSE)', ' + ', 'pnorm(', input$a, ', ', 'mean=',input$mu, ", sd=",input$sd, ', lower.tail=TRUE)')
     }
@@ -108,7 +106,7 @@ server <- function(input, output) {
     } else if (input$tail == "upper") {
       text <- paste0('pt(', input$a, ', ', 'df=',input$df, ', lower.tail=FALSE)')
     } else if (input$tail == "middle") {
-      text <- paste0('1 - ', 'pt(', input$b, ', ', 'df=',input$df, ', lower.tail=FALSE)', ' - ', 'pt(', input$a, ', ', 'df=',input$df, ', lower.tail=FALSE)')
+      text <- paste0('pt(', input$b, ', ', 'df=',input$df, ', lower.tail=TRUE)', ' - ', 'pt(', input$a, ', ', 'df=',input$df, ', lower.tail=TRUE)')
     } else if (input$tail == "both") {
       text <- paste0('pt(', input$b, ', ', 'df=',input$df, ', lower.tail=FALSE)', ' + ', 'pt(', input$a, ', ', 'df=',input$df, ', lower.tail=TRUE)')
     }
@@ -164,10 +162,14 @@ server <- function(input, output) {
       text <- paste0('pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
     } else if (input$tail == "lower" && input$lower_bound == "closed") {
       text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=TRUE)')
+    } else if (input$tail == "lower" && input$lower_bound == "equal") {
+      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ')')
     } else if (input$tail == "upper" && input$lower_bound == "open") {
       text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)')
-    }else if (input$tail == "upper" && input$lower_bound == "closed") {
+    } else if (input$tail == "upper" && input$lower_bound == "closed") {
       text <- paste0('pbinom(', input$a-1, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ', lower.tail=FALSE)')
+    } else if (input$tail == "upper" && input$lower_bound == "equal") {
+      text <- paste0('pbinom(', input$a, ', ', 'size=',input$n, ', ', ' prob=' , input$p, ')')
     } else if (input$tail == "middle") {
       text <- find_rbinom_code_middle()
     } else if (input$tail == "both" && input$lower_bound == "open" && input$upper_bound == "open") {
